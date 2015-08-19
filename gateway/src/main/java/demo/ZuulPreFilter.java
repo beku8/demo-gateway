@@ -43,17 +43,14 @@ public class ZuulPreFilter extends ZuulFilter {
 		Session session = repository.getSession(httpSession.getId());
 		//when you go directly to http://localhost:8080/uaa/login for the first time, session is not saved to the redis
 		logger.debug("session before proxy: {}", session);
-
-//		DefaultCsrfToken csrfToken =  (DefaultCsrfToken)
-//				httpSession.getAttribute("org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository.CSRF_TOKEN");
-//		logger.debug("securityContext {}", SecurityContextHolder.getContext());
-//		if(session == null){
-//			Enumeration<String> attrs = httpSession.getAttributeNames();
-//			while(attrs.hasMoreElements()){
-//				String attr = attrs.nextElement();
-//				logger.debug("session attr {}:{}", attr, httpSession.getAttribute(attr));
-//			}
-//		}
+		
+		DefaultCsrfToken csrfToken =  (DefaultCsrfToken)
+				httpSession.getAttribute("org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository.CSRF_TOKEN");
+		if(session == null && csrfToken != null){
+			//to let LoginApplication.csrfHeaderFilter to know the token. only useful first time direct access.
+			context.addZuulRequestHeader("x-proxied-csrf", csrfToken.getToken());
+		}
+		
 		return null;
 	}
 	

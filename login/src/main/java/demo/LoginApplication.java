@@ -23,6 +23,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.DefaultCsrfToken;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.stereotype.Controller;
@@ -96,6 +97,18 @@ public class LoginApplication extends WebMvcConfigurerAdapter {
 						throws ServletException, IOException {
 					CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class
 							.getName());
+					
+					//to fix the first time access issue
+					if(request.getHeader("x-proxied-csrf") != null && csrf != null){
+						CsrfTokenRepository repository = csrfTokenRepository();
+						
+						csrf = new DefaultCsrfToken(csrf.getHeaderName(), csrf.getParameterName(), request.getHeader("x-proxied-csrf"));
+						request.setAttribute(CsrfToken.class.getName(), csrf);
+						request.setAttribute(csrf.getParameterName(), csrf);
+						repository.saveToken(csrf, request, response);
+						System.out.println("changing proxied token");
+					}
+					
 					System.out.println(CsrfToken.class.getName() + " : " +csrf.getToken());
 					if (csrf != null) {
 						Cookie cookie = WebUtils.getCookie(request, "XSRF-TOKEN");
